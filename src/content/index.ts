@@ -3,15 +3,13 @@ import {
   getFiberFromElement,
   hasReactDevTools,
   getReactVersion,
-  getComponentName,
-  extractAllMetadata,
-  extractHooks,
-  buildComponentInfo,
 } from '@lib/fiber-utils';
+import { InspectorOverlay } from '@components/Inspector/InspectorOverlay';
 
 console.log('React Component Cloner: Content script loaded');
 
-let inspectorActive = false;
+// Create inspector instance
+const inspector = new InspectorOverlay();
 
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
@@ -22,11 +20,12 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   }
 
   if (request.type === 'TOGGLE_INSPECTOR') {
-    inspectorActive = request.enabled;
-    if (inspectorActive) {
-      activateInspector();
+    if (request.enabled) {
+      inspector.activate();
+      showTemporaryNotification('Inspector activated! Hover over elements to inspect.');
     } else {
-      deactivateInspector();
+      inspector.deactivate();
+      showTemporaryNotification('Inspector deactivated');
     }
     sendResponse({ success: true });
     return true;
@@ -65,61 +64,6 @@ function checkReactOnPage(): boolean {
   return false;
 }
 
-// Activate the inspector mode
-function activateInspector() {
-  console.log('React Component Cloner: Inspector activated');
-
-  // Test fiber utilities - Click any element to see its fiber info
-  document.addEventListener('click', handleElementClick, true);
-
-  showTemporaryNotification('Inspector activated! Click any element to see component info in console.');
-}
-
-// Handle element click to demonstrate fiber extraction
-function handleElementClick(e: MouseEvent) {
-  if (!inspectorActive) return;
-
-  e.preventDefault();
-  e.stopPropagation();
-
-  const element = e.target as HTMLElement;
-  console.log('React Component Cloner: Clicked element:', element);
-
-  // Get fiber from element
-  const fiber = getFiberFromElement(element);
-  if (!fiber) {
-    console.log('React Component Cloner: No fiber found for this element');
-    showTemporaryNotification('No React component found for this element');
-    return;
-  }
-
-  // Extract component information
-  console.log('React Component Cloner: Fiber found!', fiber);
-
-  const componentName = getComponentName(fiber);
-  console.log('React Component Cloner: Component name:', componentName);
-
-  const metadata = extractAllMetadata(fiber);
-  console.log('React Component Cloner: Component metadata:', metadata);
-
-  const hooks = extractHooks(fiber);
-  console.log('React Component Cloner: Hooks:', hooks);
-
-  const componentInfo = buildComponentInfo(fiber, true, 2);
-  console.log('React Component Cloner: Full component info:', componentInfo);
-
-  showTemporaryNotification(`Component: ${componentName} (see console for details)`);
-}
-
-// Deactivate the inspector mode
-function deactivateInspector() {
-  console.log('React Component Cloner: Inspector deactivated');
-
-  // Remove click event listener
-  document.removeEventListener('click', handleElementClick, true);
-
-  showTemporaryNotification('Inspector deactivated');
-}
 
 // Show a temporary notification (placeholder)
 function showTemporaryNotification(message: string) {
@@ -169,15 +113,16 @@ function showTemporaryNotification(message: string) {
 
 // Listen for keyboard shortcuts
 document.addEventListener('keydown', (e) => {
-  // Ctrl+Shift+C or Cmd+Shift+C
+  // Ctrl+Shift+C or Cmd+Shift+C to toggle inspector
   if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'C') {
     e.preventDefault();
-    inspectorActive = !inspectorActive;
 
-    if (inspectorActive) {
-      activateInspector();
+    if (inspector.isActive()) {
+      inspector.deactivate();
+      showTemporaryNotification('Inspector deactivated');
     } else {
-      deactivateInspector();
+      inspector.activate();
+      showTemporaryNotification('Inspector activated! Hover over elements to inspect.');
     }
   }
 });
