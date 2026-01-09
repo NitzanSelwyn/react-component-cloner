@@ -1,4 +1,14 @@
 // Content script - injected into web pages
+import {
+  getFiberFromElement,
+  hasReactDevTools,
+  getReactVersion,
+  getComponentName,
+  extractAllMetadata,
+  extractHooks,
+  buildComponentInfo,
+} from '@lib/fiber-utils';
+
 console.log('React Component Cloner: Content script loaded');
 
 let inspectorActive = false;
@@ -27,8 +37,10 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
 
 // Check if React is present on the page
 function checkReactOnPage(): boolean {
-  // Method 1: Check for React DevTools hook
-  if ((window as any).__REACT_DEVTOOLS_GLOBAL_HOOK__) {
+  // Method 1: Check for React DevTools hook (using fiber-utils)
+  if (hasReactDevTools()) {
+    const version = getReactVersion();
+    console.log('React Component Cloner: React detected!', version ? `Version: ${version}` : '');
     return true;
   }
 
@@ -36,16 +48,10 @@ function checkReactOnPage(): boolean {
   const allElements = document.querySelectorAll('*');
   for (let i = 0; i < Math.min(allElements.length, 100); i++) {
     const element = allElements[i];
-    const keys = Object.keys(element);
+    const fiber = getFiberFromElement(element as HTMLElement);
 
-    // Look for React internal properties
-    const hasReactFiber = keys.some(key =>
-      key.startsWith('__reactFiber') ||
-      key.startsWith('__reactProps') ||
-      key.startsWith('__reactInternalInstance')
-    );
-
-    if (hasReactFiber) {
+    if (fiber) {
+      console.log('React Component Cloner: React detected via Fiber!');
       return true;
     }
   }
@@ -62,17 +68,55 @@ function checkReactOnPage(): boolean {
 // Activate the inspector mode
 function activateInspector() {
   console.log('React Component Cloner: Inspector activated');
-  // TODO: Implement inspector overlay UI
-  // This will be implemented in Phase 3
 
-  // For now, just log a message
-  showTemporaryNotification('Inspector activated! (UI coming in Phase 3)');
+  // Test fiber utilities - Click any element to see its fiber info
+  document.addEventListener('click', handleElementClick, true);
+
+  showTemporaryNotification('Inspector activated! Click any element to see component info in console.');
+}
+
+// Handle element click to demonstrate fiber extraction
+function handleElementClick(e: MouseEvent) {
+  if (!inspectorActive) return;
+
+  e.preventDefault();
+  e.stopPropagation();
+
+  const element = e.target as HTMLElement;
+  console.log('React Component Cloner: Clicked element:', element);
+
+  // Get fiber from element
+  const fiber = getFiberFromElement(element);
+  if (!fiber) {
+    console.log('React Component Cloner: No fiber found for this element');
+    showTemporaryNotification('No React component found for this element');
+    return;
+  }
+
+  // Extract component information
+  console.log('React Component Cloner: Fiber found!', fiber);
+
+  const componentName = getComponentName(fiber);
+  console.log('React Component Cloner: Component name:', componentName);
+
+  const metadata = extractAllMetadata(fiber);
+  console.log('React Component Cloner: Component metadata:', metadata);
+
+  const hooks = extractHooks(fiber);
+  console.log('React Component Cloner: Hooks:', hooks);
+
+  const componentInfo = buildComponentInfo(fiber, true, 2);
+  console.log('React Component Cloner: Full component info:', componentInfo);
+
+  showTemporaryNotification(`Component: ${componentName} (see console for details)`);
 }
 
 // Deactivate the inspector mode
 function deactivateInspector() {
   console.log('React Component Cloner: Inspector deactivated');
-  // TODO: Remove inspector overlay UI
+
+  // Remove click event listener
+  document.removeEventListener('click', handleElementClick, true);
 
   showTemporaryNotification('Inspector deactivated');
 }

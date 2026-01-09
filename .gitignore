@@ -54,3 +54,7 @@ lerna-debug.log*
 
 # Optional eslint cache
 .eslintcache
+
+.claude/
+
+docs/
