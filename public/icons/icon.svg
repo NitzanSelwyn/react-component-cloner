@@ -1,0 +1,20 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="64" cy="64" r="60" fill="#61DAFB" opacity="0.1"/>
+
+  <!-- React atom symbol -->
+  <ellipse cx="64" cy="64" rx="50" ry="20" stroke="#61DAFB" stroke-width="3" fill="none"/>
+  <ellipse cx="64" cy="64" rx="50" ry="20" stroke="#61DAFB" stroke-width="3" fill="none" transform="rotate(60 64 64)"/>
+  <ellipse cx="64" cy="64" rx="50" ry="20" stroke="#61DAFB" stroke-width="3" fill="none" transform="rotate(120 64 64)"/>
+
+  <!-- Center dot -->
+  <circle cx="64" cy="64" r="6" fill="#61DAFB"/>
+
+  <!-- Copy/clone symbol (two overlapping squares) -->
+  <rect x="75" y="85" width="28" height="28" rx="4" fill="#61DAFB" opacity="0.3"/>
+  <rect x="70" y="80" width="28" height="28" rx="4" fill="none" stroke="#61DAFB" stroke-width="2.5"/>
+
+  <!-- Code brackets -->
+  <path d="M 25 50 L 20 64 L 25 78" stroke="#61DAFB" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M 103 50 L 108 64 L 103 78" stroke="#61DAFB" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>

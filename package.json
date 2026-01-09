@@ -1,0 +1,47 @@
+{
+  "name": "react-component-cloner",
+  "version": "0.1.0",
+  "description": "Chrome extension to clone React components from any website using React Fiber",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "prettier": "^3.2.5",
+    "postcss": "^8.4.35",
+    "@babel/parser": "^7.24.0",
+    "@babel/traverse": "^7.24.0",
+    "@babel/types": "^7.24.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@types/chrome": "^0.0.268",
+    "@types/babel__parser": "^7.1.1",
+    "@types/babel__traverse": "^7.20.5",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "eslint": "^8.57.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.5",
+    "typescript": "^5.4.5",
+    "vite": "^5.3.1",
+    "vite-plugin-static-copy": "^1.0.4"
+  },
+  "keywords": [
+    "react",
+    "chrome-extension",
+    "component-cloner",
+    "react-fiber",
+    "developer-tools"
+  ],
+  "author": "",
+  "license": "MIT"
+}
