@@ -14,7 +14,19 @@ const inspector = new InspectorOverlay();
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   if (request.type === 'CHECK_REACT') {
-    const reactDetected = checkReactOnPage();
+    // Try to detect React immediately
+    let reactDetected = checkReactOnPage();
+
+    // If not detected, wait a bit and try again (React might still be loading)
+    if (!reactDetected) {
+      console.log('React Component Cloner: First check failed, retrying in 500ms...');
+      setTimeout(() => {
+        reactDetected = checkReactOnPage();
+        sendResponse({ reactDetected });
+      }, 500);
+      return true; // Keep message channel open for async response
+    }
+
     sendResponse({ reactDetected });
     return true;
   }
@@ -36,31 +48,53 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
 
 // Check if React is present on the page
 function checkReactOnPage(): boolean {
+  console.log('React Component Cloner: Checking for React...');
+
   // Method 1: Check for React DevTools hook (using fiber-utils)
   if (hasReactDevTools()) {
     const version = getReactVersion();
-    console.log('React Component Cloner: React detected!', version ? `Version: ${version}` : '');
+    console.log('React Component Cloner: ✅ React detected via DevTools hook!', version ? `Version: ${version}` : '');
     return true;
   }
 
-  // Method 2: Check DOM nodes for React Fiber properties
+  // Method 2: Check for React on window object
+  if ((window as any).React || (window as any).ReactDOM) {
+    console.log('React Component Cloner: ✅ React detected on window object!');
+    return true;
+  }
+
+  // Method 3: Check DOM nodes for React Fiber properties
   const allElements = document.querySelectorAll('*');
-  for (let i = 0; i < Math.min(allElements.length, 100); i++) {
+  console.log(`React Component Cloner: Checking ${Math.min(allElements.length, 200)} elements for Fiber...`);
+
+  for (let i = 0; i < Math.min(allElements.length, 200); i++) {
     const element = allElements[i];
     const fiber = getFiberFromElement(element as HTMLElement);
 
     if (fiber) {
-      console.log('React Component Cloner: React detected via Fiber!');
+      console.log('React Component Cloner: ✅ React detected via Fiber on element:', element);
       return true;
     }
   }
 
-  // Method 3: Check for React root containers
+  // Method 4: Check for React root containers (legacy)
   const reactRootElements = document.querySelectorAll('[data-reactroot]');
   if (reactRootElements.length > 0) {
+    console.log('React Component Cloner: ✅ React detected via data-reactroot!');
     return true;
   }
 
+  // Method 5: Check for React 18+ root containers
+  const rootElements = document.querySelectorAll('[id*="root"], [class*="root"]');
+  for (const rootEl of Array.from(rootElements)) {
+    const fiber = getFiberFromElement(rootEl as HTMLElement);
+    if (fiber) {
+      console.log('React Component Cloner: ✅ React detected via root element!', rootEl);
+      return true;
+    }
+  }
+
+  console.log('React Component Cloner: ❌ No React detected');
   return false;
 }
 

@@ -6,6 +6,7 @@ import type { ReactFiberNode, ComponentInfo } from '@/types';
 import { getComponentName, getElementFromFiber } from './fiber-accessor';
 import { identifyComponentType } from './component-identifier';
 import { getChildrenFibers } from './fiber-traversal';
+import { extractStyles } from '@lib/style-extractor';
 
 /**
  * Extract props from a Fiber node
@@ -215,6 +216,14 @@ export function buildComponentInfo(
   const props = extractProps(fiber);
   const domNode = getElementFromFiber(fiber);
 
+  // Extract styles if DOM element exists
+  const styles = domNode ? extractStyles(domNode) : {
+    inline: {},
+    computed: {},
+    classes: [],
+    strategy: 'inline' as const,
+  };
+
   const info: ComponentInfo = {
     name: getComponentName(fiber),
     type: componentType,
@@ -222,12 +231,7 @@ export function buildComponentInfo(
     children: [],
     domNode,
     fiberNode: fiber,
-    styles: {
-      inline: {},
-      computed: {},
-      classes: [],
-      strategy: 'inline',
-    },
+    styles,
   };
 
   // Extract children if requested and within depth limit
