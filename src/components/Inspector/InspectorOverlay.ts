@@ -12,6 +12,7 @@ import {
 } from '@lib/fiber-utils';
 import { quickGenerate } from '@lib/code-generator';
 import { PreviewPanel } from '@/components/Preview/PreviewPanel';
+import { ExportModal } from '@/components/Export/ExportModal';
 import type { ReactFiberNode } from '@/types';
 
 interface InspectorState {
@@ -35,6 +36,7 @@ export class InspectorOverlay {
   private tooltipElement: HTMLDivElement | null = null;
   private infoPanelElement: HTMLDivElement | null = null;
   private previewPanel: PreviewPanel;
+  private exportModal: ExportModal;
 
   private boundHandlers = {
     handleMouseMove: this.handleMouseMove.bind(this),
@@ -45,6 +47,7 @@ export class InspectorOverlay {
   constructor() {
     this.createOverlayElements();
     this.previewPanel = new PreviewPanel();
+    this.exportModal = new ExportModal();
   }
 
   /**
@@ -379,6 +382,18 @@ export class InspectorOverlay {
               color: white;
               box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             ">📝 Extract Code</button>
+            <button id="export-component" style="
+              width: 100%;
+              padding: 12px;
+              background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+              border: none;
+              border-radius: 6px;
+              font-size: 14px;
+              font-weight: 600;
+              cursor: pointer;
+              color: white;
+              box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            ">📦 Export Package</button>
           </div>
         </div>
 
@@ -416,6 +431,11 @@ export class InspectorOverlay {
     if (extractBtn) {
       extractBtn.addEventListener('click', () => this.extractComponent());
     }
+
+    const exportBtn = this.infoPanelElement.querySelector('#export-component');
+    if (exportBtn) {
+      exportBtn.addEventListener('click', () => this.exportComponent());
+    }
   }
 
   /**
@@ -445,6 +465,33 @@ export class InspectorOverlay {
     } catch (error) {
       console.error('React Component Cloner: Error opening preview', error);
       alert(`Error opening preview. Check console for details.`);
+    }
+  }
+
+  /**
+   * Export component as ZIP package
+   */
+  private exportComponent(): void {
+    if (!this.state.selectedFiber) return;
+
+    const componentName = getComponentName(this.state.selectedFiber);
+
+    console.log('React Component Cloner: Exporting component', {
+      name: componentName,
+      fiber: this.state.selectedFiber,
+    });
+
+    try {
+      // Build component info
+      const componentInfo = buildComponentInfo(this.state.selectedFiber, true, 3);
+
+      // Show export modal
+      this.exportModal.show(this.state.selectedFiber, componentInfo);
+
+      console.log('React Component Cloner: Export modal opened successfully');
+    } catch (error) {
+      console.error('React Component Cloner: Error opening export modal', error);
+      alert(`Error opening export. Check console for details.`);
     }
   }
 
@@ -727,6 +774,7 @@ export class InspectorOverlay {
       'react-component-cloner-overlay',
       'react-component-cloner-tooltip',
       'react-component-cloner-info-panel',
+      'react-component-cloner-export-modal',
     ];
 
     let current: HTMLElement | null = element;
