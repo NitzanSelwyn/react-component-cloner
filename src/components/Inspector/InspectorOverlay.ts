@@ -9,6 +9,7 @@ import {
   getParentFiber,
   getChildrenFibers,
 } from '@lib/fiber-utils';
+import { quickGenerate } from '@lib/code-generator';
 import type { ReactFiberNode } from '@/types';
 
 interface InspectorState {
@@ -457,7 +458,7 @@ export class InspectorOverlay {
   }
 
   /**
-   * Extract component (placeholder for Phase 5)
+   * Extract component and generate code
    */
   private extractComponent(): void {
     if (!this.state.selectedFiber) return;
@@ -469,8 +470,179 @@ export class InspectorOverlay {
       fiber: this.state.selectedFiber,
     });
 
-    // TODO: Implement component extraction in Phase 5
-    alert(`Component extraction coming in Phase 5!\n\nComponent: ${componentName}\n\nFor now, check the console for fiber details.`);
+    try {
+      // Generate component code
+      const code = quickGenerate(this.state.selectedFiber);
+
+      // Show code in a modal
+      this.showCodeModal(componentName, code);
+
+      console.log('React Component Cloner: Code generated successfully');
+      console.log(code);
+    } catch (error) {
+      console.error('React Component Cloner: Error generating code', error);
+      alert(`Error generating component code. Check console for details.`);
+    }
+  }
+
+  /**
+   * Show generated code in a modal
+   */
+  private showCodeModal(componentName: string, code: string): void {
+    // Create modal backdrop
+    const backdrop = document.createElement('div');
+    backdrop.id = 'react-component-cloner-modal-backdrop';
+    backdrop.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 2147483648;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    `;
+
+    // Create modal
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+      background: white;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 800px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    `;
+
+    // Modal header
+    const header = document.createElement('div');
+    header.style.cssText = `
+      padding: 20px 24px;
+      border-bottom: 1px solid #e9ecef;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    `;
+
+    const title = document.createElement('h2');
+    title.style.cssText = `
+      margin: 0;
+      font-size: 20px;
+      font-weight: 600;
+      color: #212529;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    `;
+    title.textContent = `${componentName} Component`;
+
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = '×';
+    closeBtn.style.cssText = `
+      background: none;
+      border: none;
+      font-size: 28px;
+      cursor: pointer;
+      color: #6c757d;
+      padding: 0;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    `;
+    closeBtn.onclick = () => document.body.removeChild(backdrop);
+
+    header.appendChild(title);
+    header.appendChild(closeBtn);
+
+    // Code container
+    const codeContainer = document.createElement('div');
+    codeContainer.style.cssText = `
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+      background: #f8f9fa;
+    `;
+
+    const pre = document.createElement('pre');
+    pre.style.cssText = `
+      margin: 0;
+      padding: 16px;
+      background: #1e1e1e;
+      color: #d4d4d4;
+      border-radius: 6px;
+      font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    `;
+    pre.textContent = code;
+
+    codeContainer.appendChild(pre);
+
+    // Footer with actions
+    const footer = document.createElement('div');
+    footer.style.cssText = `
+      padding: 16px 24px;
+      border-top: 1px solid #e9ecef;
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    `;
+
+    const copyBtn = document.createElement('button');
+    copyBtn.textContent = 'Copy to Clipboard';
+    copyBtn.style.cssText = `
+      padding: 10px 20px;
+      background: linear-gradient(135deg, #61dafb 0%, #4fa3c7 100%);
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      color: white;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    `;
+    copyBtn.onclick = () => {
+      navigator.clipboard.writeText(code).then(() => {
+        copyBtn.textContent = '✓ Copied!';
+        setTimeout(() => {
+          copyBtn.textContent = 'Copy to Clipboard';
+        }, 2000);
+      });
+    };
+
+    footer.appendChild(copyBtn);
+
+    // Assemble modal
+    modal.appendChild(header);
+    modal.appendChild(codeContainer);
+    modal.appendChild(footer);
+    backdrop.appendChild(modal);
+
+    // Add to document
+    document.body.appendChild(backdrop);
+
+    // Close on backdrop click
+    backdrop.onclick = (e) => {
+      if (e.target === backdrop) {
+        document.body.removeChild(backdrop);
+      }
+    };
+
+    // Close on ESC key
+    const escHandler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        document.body.removeChild(backdrop);
+        document.removeEventListener('keydown', escHandler);
+      }
+    };
+    document.addEventListener('keydown', escHandler);
   }
 
   /**
