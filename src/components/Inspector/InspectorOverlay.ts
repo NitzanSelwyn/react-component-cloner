@@ -8,8 +8,10 @@ import {
   getNearestComponentFiber,
   getParentFiber,
   getChildrenFibers,
+  buildComponentInfo,
 } from '@lib/fiber-utils';
 import { quickGenerate } from '@lib/code-generator';
+import { PreviewPanel } from '@/components/Preview/PreviewPanel';
 import type { ReactFiberNode } from '@/types';
 
 interface InspectorState {
@@ -32,6 +34,7 @@ export class InspectorOverlay {
   private overlayElement: HTMLDivElement | null = null;
   private tooltipElement: HTMLDivElement | null = null;
   private infoPanelElement: HTMLDivElement | null = null;
+  private previewPanel: PreviewPanel;
 
   private boundHandlers = {
     handleMouseMove: this.handleMouseMove.bind(this),
@@ -41,6 +44,7 @@ export class InspectorOverlay {
 
   constructor() {
     this.createOverlayElements();
+    this.previewPanel = new PreviewPanel();
   }
 
   /**
@@ -350,18 +354,32 @@ export class InspectorOverlay {
           <div style="font-size: 12px; font-weight: 600; color: #495057; margin-bottom: 8px;">
             ACTIONS
           </div>
-          <button id="extract-component" style="
-            width: 100%;
-            padding: 12px;
-            background: linear-gradient(135deg, #61dafb 0%, #4fa3c7 100%);
-            border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            color: white;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-          ">Extract Component</button>
+          <div style="display: flex; gap: 8px; flex-direction: column;">
+            <button id="preview-component" style="
+              width: 100%;
+              padding: 12px;
+              background: linear-gradient(135deg, #9945ff 0%, #7b2cbf 100%);
+              border: none;
+              border-radius: 6px;
+              font-size: 14px;
+              font-weight: 600;
+              cursor: pointer;
+              color: white;
+              box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            ">👁️ Preview Component</button>
+            <button id="extract-component" style="
+              width: 100%;
+              padding: 12px;
+              background: linear-gradient(135deg, #61dafb 0%, #4fa3c7 100%);
+              border: none;
+              border-radius: 6px;
+              font-size: 14px;
+              font-weight: 600;
+              cursor: pointer;
+              color: white;
+              box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            ">📝 Extract Code</button>
+          </div>
         </div>
 
         <div style="font-size: 11px; color: #6c757d; text-align: center;">
@@ -389,9 +407,44 @@ export class InspectorOverlay {
       childBtn.addEventListener('click', () => this.selectChildComponent());
     }
 
+    const previewBtn = this.infoPanelElement.querySelector('#preview-component');
+    if (previewBtn) {
+      previewBtn.addEventListener('click', () => this.previewComponent());
+    }
+
     const extractBtn = this.infoPanelElement.querySelector('#extract-component');
     if (extractBtn) {
       extractBtn.addEventListener('click', () => this.extractComponent());
+    }
+  }
+
+  /**
+   * Preview component in preview panel
+   */
+  private previewComponent(): void {
+    if (!this.state.selectedFiber) return;
+
+    const componentName = getComponentName(this.state.selectedFiber);
+
+    console.log('React Component Cloner: Previewing component', {
+      name: componentName,
+      fiber: this.state.selectedFiber,
+    });
+
+    try {
+      // Build component info
+      const componentInfo = buildComponentInfo(this.state.selectedFiber, true, 3);
+
+      // Show preview panel
+      this.previewPanel.show(this.state.selectedFiber, componentInfo, {
+        showComparison: true,
+        viewportSize: 'desktop',
+      });
+
+      console.log('React Component Cloner: Preview opened successfully');
+    } catch (error) {
+      console.error('React Component Cloner: Error opening preview', error);
+      alert(`Error opening preview. Check console for details.`);
     }
   }
 
